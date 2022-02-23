@@ -1,0 +1,144 @@
+<section>
+    <div class="container mt-5 "></div>
+    <form action="/place-order" method="post" id="checkout-form">
+        <div class="row">
+            <div class="col-md-6 ml-5  ">
+                <h2>Enter delivery details</h2>
+                <div>
+                    <label>Address</label>
+                    <input type="text" class="form-control" name="Address" placeholder="Enter Address">
+
+                    <label>Pincode</label>
+                    <input type="tel" class="form-control" name="Pincode" id="InputPincode" aria-describedby="emailHelp"
+                        placeholder="Enter Pincode">
+
+                    <label>Mobile</label>
+                    <input type="tel" class="form-control" name="Mobile" id="InputMobile"
+                        placeholder="Enter mobile number">
+                    <input type="text" name="userId" id="" value="{{user}}" hidden>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="container mt-5 ml-5 checkout">
+                    <h5>Total Amount : Rs.{{total}}</h5>
+                    <hr>
+                    <div class="payment">
+                        <p>Payment method</p>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="payment-method" value="COD"
+                                id="payment-method">
+                            <label class="form-check-label" for="payment-method">
+                                checkout-COD
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="payment-method" value="ONLINE"
+                                id="payment-method" checked>
+                            <label class="form-check-label" for="payment-method">
+                                Online payment
+                            </label>
+
+                        </div>
+                        <button class="btn btn-primary float-right" type="submit">checkout</button>
+                    </div>
+
+                </div>
+            </div>
+
+
+        </div>
+    </form>
+    </div>
+</section>
+
+<script>
+    
+    $("#checkout-form").submit((e) => {
+        e.preventDefault()
+        $.ajax({
+            url: '/place-order',
+            method: 'post',
+            data: $('#checkout-form').serialize(),
+            success: (response) => {
+              
+                if (response.codSuccess) {
+                    location.href = "/order-success"
+                } else {
+                razorpayPayment(response)
+                }
+            }
+        })
+    })
+    function razorpayPayment(order){
+        var options = {
+    "key": "rzp_test_iqkygS8E5eAItW", // Enter the Key ID generated from the Dashboard
+    "amount": order.amount, // Amount is in currency subunits. Default currency is INR. Hence, 50000 refers to 50000 paise
+    "currency": "INR",
+    "name": "Acme Corp",
+    "description": "Test Transaction",
+    "image": "https://example.com/your_logo",
+    "order_id": order.id, //This is a sample Order ID. Pass the `id` obtained in the response of Step 1
+    "handler": function (response){
+        alert(response.razorpay_payment_id);
+        alert(response.razorpay_order_id);
+        alert(response.razorpay_signature)
+
+        verifypayment(response,order)
+    },
+    "prefill": {
+        "name": "Gaurav Kumar",
+        "email": "gaurav.kumar@example.com",
+        "contact": "9999999999"
+    },
+    "notes": {
+        "address": "Razorpay Corporate Office"
+    },
+    "theme": {
+        "color": "#3399cc"
+    }
+    
+};
+var rzp1 = new Razorpay(options);
+ rzp1.open();
+    }
+    function verifypayment(payment,order){
+        $.ajax({
+            url:'/verify-payment',
+            data:{
+                payment,
+                order
+            },
+            method:'post',
+            success:(response)=>{
+            if(response.status){
+                location.href = "/order-success"
+            }else{
+                alert('Payment failed')
+            }
+            }
+        })
+    }
+</script>
+
+
+<style>
+    input[type=radio] {
+        width: 20px;
+        height: 20px;
+    }
+
+    label.radio-inline {
+        display: flex;
+        align-items: center;
+    }
+
+    .checkout {
+        border: 1px solid;
+        border-radius: 3px;
+        padding: 30px;
+    }
+
+    .payment {
+        padding-bottom: 16px;
+    }
+</style>
